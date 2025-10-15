@@ -10,6 +10,7 @@ export default function DashUsers() {
   const [showMore, setShowMore] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState('');
+  
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -30,7 +31,7 @@ export default function DashUsers() {
     }
   }, [currentUser._id]);
 
-  const handleShowMore = async () => {
+  const handleShowMore = async () => { 
     const startIndex = users.length;
     try {
       const res = await fetch(`/api/user/getusers?startIndex=${startIndex}`);
@@ -46,7 +47,7 @@ export default function DashUsers() {
     }
   };
 
-  const handleDeleteUser = async () => {
+  const handleDeleteUser = async () => { 
     try {
         const res = await fetch(`/api/user/delete/${userIdToDelete}`, {
             method: 'DELETE',
@@ -59,26 +60,28 @@ export default function DashUsers() {
             console.log(data.message);
         }
     } catch (error) {
-        console.log(error.message);
+      console.log(error.message);
     }
   };
 
   return (
-    <div className='table-auto overflow-x-scroll md:mx-auto p-3 scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500'>
+    <div className='table-auto overflow-x-scroll md:mx-auto p-3  scrollbar scrollbar-track-slate-100 scrollbar-thumb-slate-300 dark:scrollbar-track-slate-700 dark:scrollbar-thumb-slate-500'>
       {currentUser.isAdmin && users.length > 0 ? (
         <>
-          <Table hoverable className='shadow-md'>
-            <Table.Head>
-              <Table.HeadCell>Date created</Table.HeadCell>
-              <Table.HeadCell>User image</Table.HeadCell>
+          <Table hoverable className='shadow-md '>
+            
+            <Table.Head className='text-blue-700'>
+              <Table.HeadCell>Date Created</Table.HeadCell>
+              <Table.HeadCell>User Image</Table.HeadCell>
               <Table.HeadCell>Username</Table.HeadCell>
               <Table.HeadCell>Email</Table.HeadCell>
               <Table.HeadCell>Admin</Table.HeadCell>
               <Table.HeadCell>Delete</Table.HeadCell>
             </Table.Head>
+
             {users.map((user) => (
               <Table.Body className='divide-y' key={user._id}>
-                <Table.Row className='bg-white dark:border-gray-700 dark:bg-gray-800'>
+                <Table.Row className='bg-white dark:border-gray-700 dark:bg-gray-800 border-2 border-teal-300'>
                   <Table.Cell>
                     {new Date(user.createdAt).toLocaleDateString()}
                   </Table.Cell>

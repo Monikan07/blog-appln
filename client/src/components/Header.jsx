@@ -7,6 +7,7 @@ import { toggleTheme } from '../redux/theme/themeSlice';
 import { signoutSuccess } from '../redux/user/userSlice';
 import { useEffect, useState } from 'react';
 
+
 export default function Header() {
   const path = useLocation().pathname;
   const location = useLocation();
@@ -48,33 +49,39 @@ export default function Header() {
     navigate(`/search?${searchQuery}`);
   };
 
-  return (
-    <Navbar className='border-b-2'>
+ return (
+    <Navbar className='flex gap-5 md:order-2 '>
       <Link
         to='/'
-        className='self-center whitespace-nowrap text-sm sm:text-xl font-semibold dark:text-white'
+        className='self-center whitespace-nowrap text-sm sm:text-xl font-bold dark:text-white font-mono flex items-center gap-2' 
       >
-        <span className='px-2 py-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-lg text-white'>
-          Sahand's
+        <img 
+          src='/src/assests/ws.png'
+          alt='WanderSpice Logo'
+          className='w-16 h-16 rounded-full object-cover' 
+          onerror="this.onerror=null;this.src='https://placehold.co/40x40/34D399/ffffff?text=Logo';"
+        />
+        <span className='px-2 py-1 bg-gradient-to-r from-teal-500 to-lime-500 rounded-lg text-white font-playwrite'>
+          WanderSpice
         </span>
-        Blog
+        <span className='text-3xl font-updock'>Blog</span>
       </Link>
       <form onSubmit={handleSubmit}>
         <TextInput
           type='text'
           placeholder='Search...'
           rightIcon={AiOutlineSearch}
-          className='hidden lg:inline'
+          className='hidden lg:inline-flex w-[350px] xl:w-[450px] text-base py-2 '
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </form>
-      <Button className='w-12 h-10 lg:hidden' color='gray' pill>
+      <Button className='w-14 h-12 lg:hidden' color='gray' pill>
         <AiOutlineSearch />
-      </Button>
-      <div className='flex gap-2 md:order-2'>
+      </Button> 
+      <div className='flex gap-5 md:order-2'>
         <Button
-          className='w-12 h-10 hidden sm:inline'
+          className='w-14 h-12 sm:inline flex items-center justify-center text-lg'
           color='gray'
           pill
           onClick={() => dispatch(toggleTheme())}
@@ -86,24 +93,24 @@ export default function Header() {
             arrowIcon={false}
             inline
             label={
-              <Avatar alt='user' img={currentUser.profilePicture} rounded />
+              <Avatar alt='user' img={currentUser.profilePicture} rounded  />
             }
           >
-            <Dropdown.Header>
+            <Dropdown.Header className="font-sans">
               <span className='block text-sm'>@{currentUser.username}</span>
               <span className='block text-sm font-medium truncate'>
                 {currentUser.email}
               </span>
             </Dropdown.Header>
             <Link to={'/dashboard?tab=profile'}>
-              <Dropdown.Item>Profile</Dropdown.Item>
+              <Dropdown.Item className="font-sans">Profile</Dropdown.Item>
             </Link>
             <Dropdown.Divider />
-            <Dropdown.Item onClick={handleSignout}>Sign out</Dropdown.Item>
+            <Dropdown.Item onClick={handleSignout} className="font-sans">Sign out</Dropdown.Item>
           </Dropdown>
         ) : (
           <Link to='/sign-in'>
-            <Button gradientDuoTone='purpleToBlue' outline>
+            <Button gradientDuoTone='tealToLime' outline>
               Sign In
             </Button>
           </Link>
@@ -111,14 +118,14 @@ export default function Header() {
         <Navbar.Toggle />
       </div>
       <Navbar.Collapse>
-        <Navbar.Link active={path === '/'} as={'div'}>
-          <Link to='/'>Home</Link>
+        <Navbar.Link active={path === '/'} as={'div'} className="font-sans">
+          <Link to='/' className='text-2xl font-bold font-mono'>Home</Link>
         </Navbar.Link>
-        <Navbar.Link active={path === '/about'} as={'div'}>
-          <Link to='/about'>About</Link>
+        <Navbar.Link active={path === '/about'} as={'div'} className="font-sans">
+          <Link to='/about' className='text-2xl font-bold font-mono'>About</Link>
         </Navbar.Link>
-        <Navbar.Link active={path === '/projects'} as={'div'}>
-          <Link to='/projects'>Projects</Link>
+        <Navbar.Link active={path === '/explore'} as={'div'} className="font-sans">
+          <Link to='/explore' className='text-2xl font-bold font-mono'>Explore</Link>
         </Navbar.Link>
       </Navbar.Collapse>
     </Navbar>

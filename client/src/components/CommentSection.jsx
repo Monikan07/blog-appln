@@ -113,7 +113,7 @@ export default function CommentSection({ postId }) {
   return (
     <div className='max-w-2xl mx-auto w-full p-3'>
       {currentUser ? (
-        <div className='flex items-center gap-1 my-5 text-gray-500 text-sm'>
+        <div className='flex items-center gap-1 my-5 text-gray-500 text-lg'>
           <p>Signed in as:</p>
           <img
             className='h-5 w-5 object-cover rounded-full'
@@ -138,7 +138,7 @@ export default function CommentSection({ postId }) {
       {currentUser && (
         <form
           onSubmit={handleSubmit}
-          className='border border-teal-500 rounded-md p-3'
+          className='border border-teal-500 rounded-md p-5'
         >
           <Textarea
             placeholder='Add a comment...'
@@ -148,10 +148,10 @@ export default function CommentSection({ postId }) {
             value={comment}
           />
           <div className='flex justify-between items-center mt-5'>
-            <p className='text-gray-500 text-xs'>
+            <p className='text-gray-400 text-sm'>
               {200 - comment.length} characters remaining
             </p>
-            <Button outline gradientDuoTone='purpleToBlue' type='submit'>
+            <Button outline gradientDuoTone='tealToLime' type='submit'>
               Submit
             </Button>
           </div>
@@ -163,12 +163,12 @@ export default function CommentSection({ postId }) {
         </form>
       )}
       {comments.length === 0 ? (
-        <p className='text-sm my-5'>No comments yet!</p>
+        <p className='text-lg my-5'>No comments yet!</p>
       ) : (
         <>
-          <div className='text-sm my-5 flex items-center gap-1'>
+          <div className='text-lg my-5 flex items-center gap-1'>
             <p>Comments</p>
-            <div className='border border-gray-400 py-1 px-2 rounded-sm'>
+            <div className='border border-gray-400 py-1 px-3 rounded-sm'>
               <p>{comments.length}</p>
             </div>
           </div>

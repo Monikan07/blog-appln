@@ -1,4 +1,3 @@
-import { Alert, Button, Modal, ModalBody, TextInput } from 'flowbite-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
@@ -7,9 +6,7 @@ import {
   ref,
   uploadBytesResumable,
 } from 'firebase/storage';
-import { app } from '../firebase';
-import { CircularProgressbar } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
+import { app } from '../firebase'; 
 import {
   updateStart,
   updateSuccess,
@@ -18,15 +15,43 @@ import {
   deleteUserSuccess,
   deleteUserFailure,
   signoutSuccess,
-} from '../redux/user/userSlice';
+} from '../redux/user/userSlice'; 
 import { useDispatch } from 'react-redux';
-import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { Link } from 'react-router-dom';
+
+const Alert = ({ color, children, className = '' }) => {
+  const baseClasses = 'p-3 text-sm rounded-lg';
+  const colorClasses = {
+    failure: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+    success: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  }[color] || '';
+  return <div className={`${baseClasses} ${colorClasses} ${className}`}>{children}</div>;
+};
+
+const CustomModal = ({ show, children }) => {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const ExclamationIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.174 3.35 1.944 3.35h14.717c1.77 0 2.81-1.85 1.943-3.35L13.732 4.71a1.991 1.991 0 0 0-3.464 0L3.303 16.126Z" />
+    </svg>
+);
+
 
 export default function DashProfile() {
   const { currentUser, error, loading } = useSelector((state) => state.user);
-  const [imageFile, setImageFile] = useState(null);
-  const [imageFileUrl, setImageFileUrl] = useState(null);
+  
+  const [imageFiles, setImageFiles] = useState([]); 
+  const [imageFileUrls, setImageFileUrls] = useState([]);
+  
   const [imageFileUploadProgress, setImageFileUploadProgress] = useState(null);
   const [imageFileUploadError, setImageFileUploadError] = useState(null);
   const [imageFileUploading, setImageFileUploading] = useState(false);
@@ -36,61 +61,101 @@ export default function DashProfile() {
   const [formData, setFormData] = useState({});
   const filePickerRef = useRef();
   const dispatch = useDispatch();
+  
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImageFileUrl(URL.createObjectURL(file));
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const validFiles = Array.from(files).filter(file => file.size / 1024 / 1024 < 2);
+      
+      if (validFiles.length !== files.length) {
+          setImageFileUploadError('Some files were skipped (Max 2MB per file)');
+      } else {
+          setImageFileUploadError(null);
+      }
+
+      setImageFiles(validFiles);
+      
+      const urls = validFiles.map(file => URL.createObjectURL(file));
+      setImageFileUrls(urls);
     }
   };
+  
   useEffect(() => {
-    if (imageFile) {
-      uploadImage();
+    if (imageFiles.length > 0) {
+      uploadImages(imageFiles); 
     }
-  }, [imageFile]);
+  }, [imageFiles]);
 
-  const uploadImage = async () => {
-    // service firebase.storage {
-    //   match /b/{bucket}/o {
-    //     match /{allPaths=**} {
-    //       allow read;
-    //       allow write: if
-    //       request.resource.size < 2 * 1024 * 1024 &&
-    //       request.resource.contentType.matches('image/.*')
-    //     }
-    //   }
-    // }
+  const uploadImages = async (files) => {
     setImageFileUploading(true);
     setImageFileUploadError(null);
-    const storage = getStorage(app);
-    const fileName = new Date().getTime() + imageFile.name;
-    const storageRef = ref(storage, fileName);
-    const uploadTask = uploadBytesResumable(storageRef, imageFile);
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+    setImageFileUploadProgress(0); 
 
-        setImageFileUploadProgress(progress.toFixed(0));
-      },
-      (error) => {
-        setImageFileUploadError(
-          'Could not upload image (File must be less than 2MB)'
+    const storage = getStorage(app);
+    const uploadedUrls = [];
+    let totalBytesTransferred = 0;
+    let totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+
+    const uploadPromises = files.map((file) => {
+      return new Promise((resolve, reject) => {
+        const fileName = new Date().getTime() + file.name;
+        const storageRef = ref(storage, fileName);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        let fileTransferred = 0;
+
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            const currentFileProgress = snapshot.bytesTransferred;
+            const delta = currentFileProgress - fileTransferred;
+            fileTransferred = currentFileProgress;
+            totalBytesTransferred += delta;
+            
+            const overallProgress = (totalBytesTransferred / totalBytes) * 100;
+            setImageFileUploadProgress(overallProgress.toFixed(0));
+          },
+          (error) => {
+            let errorMessage = `Could not upload image ${file.name}`;
+            if (error.code === 'storage/unauthorized') {
+                errorMessage = 'Access denied. Check Firebase Storage rules.';
+            } else if (error.code === 'storage/quota-exceeded') {
+                errorMessage = 'Upload quota exceeded. Try again later.';
+            }
+            reject(errorMessage);
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+              uploadedUrls.push(downloadURL);
+              resolve();
+            }).catch(reject);
+          }
         );
-        setImageFileUploadProgress(null);
-        setImageFile(null);
-        setImageFileUrl(null);
-        setImageFileUploading(false);
-      },
-      () => {
-        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          setImageFileUrl(downloadURL);
-          setFormData({ ...formData, profilePicture: downloadURL });
-          setImageFileUploading(false);
-        });
-      }
-    );
+      });
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+      
+      const profilePictureUrl = uploadedUrls[0]; 
+      
+     setFormData(prevFormData => ({ 
+    ...prevFormData, 
+    images: uploadedUrls 
+}));
+      
+      setImageFileUploading(false);
+      setImageFileUploadError(null); 
+      setImageFileUploadProgress(100);
+
+    } catch (error) {
+      console.error(error);
+      setImageFileUploadError(`Error uploading files: ${error.toString()}`);
+      setImageFileUploading(false);
+      setImageFileUploadProgress(null);
+      setImageFiles([]); 
+      setImageFileUrls([]); 
+    }
   };
 
   const handleChange = (e) => {
@@ -106,7 +171,7 @@ export default function DashProfile() {
       return;
     }
     if (imageFileUploading) {
-      setUpdateUserError('Please wait for image to upload');
+      setUpdateUserError('Please wait for images to finish uploading');
       return;
     }
     try {
@@ -164,6 +229,9 @@ export default function DashProfile() {
       console.log(error.message);
     }
   };
+  
+  const currentProfilePicture = imageFileUrls[0] || formData.profilePicture || currentUser.profilePicture;
+
   return (
     <div className='max-w-lg mx-auto p-3 w-full'>
       <h1 className='my-7 text-center font-semibold text-3xl'>Profile</h1>
@@ -174,37 +242,24 @@ export default function DashProfile() {
           onChange={handleImageChange}
           ref={filePickerRef}
           hidden
+          multiple 
         />
         <div
           className='relative w-32 h-32 self-center cursor-pointer shadow-md overflow-hidden rounded-full'
           onClick={() => filePickerRef.current.click()}
         >
-          {imageFileUploadProgress && (
-            <CircularProgressbar
-              value={imageFileUploadProgress || 0}
-              text={`${imageFileUploadProgress}%`}
-              strokeWidth={5}
-              styles={{
-                root: {
-                  width: '100%',
-                  height: '100%',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                },
-                path: {
-                  stroke: `rgba(62, 152, 199, ${
-                    imageFileUploadProgress / 100
-                  })`,
-                },
-              }}
-            />
+          {imageFileUploadProgress !== null && imageFileUploadProgress < 100 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 text-white font-bold text-xl">
+              <div className='w-24 h-24 flex items-center justify-center border-4 border-dashed border-white rounded-full'>
+                {imageFileUploadProgress}%
+              </div>
+            </div>
           )}
           <img
-            src={imageFileUrl || currentUser.profilePicture}
+            src={currentProfilePicture}
             alt='user'
-            className={`rounded-full w-full h-full object-cover border-8 border-[lightgray] ${
-              imageFileUploadProgress &&
+            className={`rounded-full w-full h-full object-cover border-8 border-[#bae7ff] ${
+              imageFileUploadProgress !== null &&
               imageFileUploadProgress < 100 &&
               'opacity-60'
             }`}
@@ -213,44 +268,53 @@ export default function DashProfile() {
         {imageFileUploadError && (
           <Alert color='failure'>{imageFileUploadError}</Alert>
         )}
-        <TextInput
-          type='text'
-          id='username'
-          placeholder='username'
-          defaultValue={currentUser.username}
-          onChange={handleChange}
-        />
-        <TextInput
-          type='email'
-          id='email'
-          placeholder='email'
-          defaultValue={currentUser.email}
-          onChange={handleChange}
-        />
-        <TextInput
-          type='password'
-          id='password'
-          placeholder='password'
-          onChange={handleChange}
-        />
-        <Button
+<input 
+  type='text'
+  id='username'
+  placeholder='username'
+  className='p-3 rounded-lg bg-gray-100 text-black placeholder-gray-500 border border-gray-300 
+             focus:outline-none focus:ring-2 focus:ring-teal-400 
+             dark:bg-[#1b2135] dark:text-white dark:border-gray-600 dark:placeholder-gray-400 transition-colors duration-300'
+  defaultValue={currentUser.username}
+  onChange={handleChange}
+/>
+
+<input 
+  type='email'
+  id='email'
+  placeholder='email'
+  className='p-3 rounded-lg bg-gray-100 text-black placeholder-gray-500 border border-gray-300 
+             focus:outline-none focus:ring-2 focus:ring-teal-400 
+             dark:bg-[#1b2135] dark:text-white dark:border-gray-600 dark:placeholder-gray-400 transition-colors duration-300'
+  defaultValue={currentUser.email}
+  onChange={handleChange}
+/>
+
+<input 
+  type='password'
+  id='password'
+  placeholder='password'
+  className='p-3 rounded-lg bg-gray-100 text-black placeholder-gray-500 border border-gray-300 
+             focus:outline-none focus:ring-2 focus:ring-teal-400 
+             dark:bg-[#1b2135] dark:text-white dark:border-gray-600 dark:placeholder-gray-400 transition-colors duration-300'
+  onChange={handleChange}
+/>
+        <button 
           type='submit'
-          gradientDuoTone='purpleToBlue'
-          outline
+          className='p-3 text-white rounded-lg font-medium border border-transparent bg-gradient-to-r from-teal-400 to-lime-400 hover:opacity-90 transition-opacity disabled:opacity-50'
           disabled={loading || imageFileUploading}
         >
           {loading ? 'Loading...' : 'Update'}
-        </Button>
+        </button>
         {currentUser.isAdmin && (
-          <Link to={'/create-post'}>
-            <Button
-              type='button'
-              gradientDuoTone='purpleToPink'
-              className='w-full'
-            >
-              Create a post
-            </Button>
-          </Link>
+            <Link to={'/create-post'} className="mt-2 w-full">
+                {/* <button 
+                    type='button' 
+                    className='p-3 w-full text-white rounded-lg font-medium border border-transparent bg-gradient-to-r from-purple-500 to-blue-500 hover:opacity-90 transition-opacity'
+                >
+                    Create a post
+                </button> */}
+            </Link>
         )}
       </form>
       <div className='text-red-500 flex justify-between mt-5'>
@@ -276,30 +340,61 @@ export default function DashProfile() {
           {error}
         </Alert>
       )}
-      <Modal
+      <CustomModal
         show={showModal}
         onClose={() => setShowModal(false)}
-        popup
-        size='md'
       >
-        <Modal.Header />
-        <Modal.Body>
           <div className='text-center'>
-            <HiOutlineExclamationCircle className='h-14 w-14 text-gray-400 dark:text-gray-200 mb-4 mx-auto' />
+            <ExclamationIcon />
             <h3 className='mb-5 text-lg text-gray-500 dark:text-gray-400'>
               Are you sure you want to delete your account?
             </h3>
             <div className='flex justify-center gap-4'>
-              <Button color='failure' onClick={handleDeleteUser}>
+              <button 
+                className='p-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors'
+                onClick={handleDeleteUser}
+              >
                 Yes, I'm sure
-              </Button>
-              <Button color='gray' onClick={() => setShowModal(false)}>
+              </button>
+              <button 
+                className='p-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 transition-colors'
+                onClick={() => setShowModal(false)}
+              >
                 No, cancel
-              </Button>
+              </button>
             </div>
           </div>
-        </Modal.Body>
-      </Modal>
+      </CustomModal>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{/* {currentUser.isAdmin && (
+            <Link to={'/create-post'} className="mt-2">
+                <TailwindButton
+                    type='button' 
+                    gradientDuoTone='purpleToBlue'
+                    className='w-full'
+                >
+                    Create a post
+                </TailwindButton>
+            </Link>
+        )} */}
