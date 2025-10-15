@@ -5,6 +5,7 @@ import {
   deleteComment,
   editComment,
   getPostComments,
+  getCommentsOnUserPosts,
   getcomments,
   likeComment,
 } from '../controllers/comment.controller.js';
@@ -15,6 +16,7 @@ router.post('/create', verifyToken, createComment);
 router.get('/getPostComments/:postId', getPostComments);
 router.put('/likeComment/:commentId', verifyToken, likeComment);
 router.put('/editComment/:commentId', verifyToken, editComment);
+router.get('/getcomments-on-user-posts', verifyToken, getCommentsOnUserPosts); 
 router.delete('/deleteComment/:commentId', verifyToken, deleteComment);
 router.get('/getcomments', verifyToken, getcomments);
 
