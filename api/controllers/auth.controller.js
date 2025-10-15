@@ -2,6 +2,8 @@ import User from '../models/user.model.js';
 import bcryptjs from 'bcryptjs';
 import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
+//import { OAuth2Client } from 'google-auth-library';
+
 
 export const signup = async (req, res, next) => {
   const { username, email, password } = req.body;
@@ -60,6 +62,9 @@ export const signin = async (req, res, next) => {
       .status(200)
       .cookie('access_token', token, {
         httpOnly: true,
+        sameSite: 'Lax', 
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
       })
       .json(rest);
   } catch (error) {
@@ -79,8 +84,11 @@ export const google = async (req, res, next) => {
       const { password, ...rest } = user._doc;
       res
         .status(200)
-        .cookie('access_token', token, {
+        .cookie('access_token', token,  {
           httpOnly: true,
+          sameSite: 'Lax', 
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
         })
         .json(rest);
     } else {
