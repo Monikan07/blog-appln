@@ -14,59 +14,88 @@ import 'react-circular-progressbar/dist/styles.css';
 import { useNavigate } from 'react-router-dom';
 
 export default function CreatePost() {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]); 
   const [imageUploadProgress, setImageUploadProgress] = useState(null);
   const [imageUploadError, setImageUploadError] = useState(null);
-  const [formData, setFormData] = useState({});
+  
+  const [formData, setFormData] = useState({ imageUrls: [] });
   const [publishError, setPublishError] = useState(null);
 
   const navigate = useNavigate();
 
-  const handleUpdloadImage = async () => {
-    try {
-      if (!file) {
-        setImageUploadError('Please select an image');
-        return;
-      }
-      setImageUploadError(null);
+  const storeImage = (file) => {
+    return new Promise((resolve, reject) => {
       const storage = getStorage(app);
       const fileName = new Date().getTime() + '-' + file.name;
       const storageRef = ref(storage, fileName);
       const uploadTask = uploadBytesResumable(storageRef, file);
+
       uploadTask.on(
         'state_changed',
         (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setImageUploadProgress(progress.toFixed(0));
         },
         (error) => {
-          setImageUploadError('Image upload failed');
-          setImageUploadProgress(null);
+          reject(error);
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            setImageUploadProgress(null);
-            setImageUploadError(null);
-            setFormData({ ...formData, image: downloadURL });
+            resolve(downloadURL);
           });
         }
       );
+    });
+  };
+
+  const handleUpdloadImage = async () => {
+    if (files.length === 0) {
+      setImageUploadError('Please select images to upload.');
+      return;
+    }
+    setImageUploadError(null);
+    setImageUploadProgress(0);
+
+    try {
+        const uploadPromises = Array.from(files).map(storeImage);
+
+        const urls = await Promise.all(uploadPromises);
+
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            imageUrls: [...prevFormData.imageUrls, ...urls],
+        }));
+
+        setImageUploadProgress(null);
+        setFiles([]); 
     } catch (error) {
-      setImageUploadError('Image upload failed');
-      setImageUploadProgress(null);
-      console.log(error);
+        setImageUploadError('Image upload failed (check file size limits)');
+        setImageUploadProgress(null);
+        console.log(error);
     }
   };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData({
+        ...formData,
+        imageUrls: formData.imageUrls.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const bodyData = {
+          ...formData,
+          image: formData.imageUrls[0] || null, 
+      };
+
       const res = await fetch('/api/post/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(bodyData),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -102,21 +131,25 @@ export default function CreatePost() {
               setFormData({ ...formData, category: e.target.value })
             }
           >
-            <option value='uncategorized'>Select a category</option>
-            <option value='javascript'>JavaScript</option>
-            <option value='reactjs'>React.js</option>
-            <option value='nextjs'>Next.js</option>
+            <option value='uncategorized'>Select a catagory..</option>
+            <option value='budget-travel'>Budget Travel</option>
+            <option value='gourmet-recipes'>Gourmet Recipes</option>
+            <option value='street-food'>Street Food Finds</option>
+            <option value='destination-guides'>Destination Guides</option>
+            <option value='travel-hacks'>Travel Hacks</option>
           </Select>
         </div>
+        
         <div className='flex gap-4 items-center justify-between border-4 border-teal-500 border-dotted p-3'>
           <FileInput
             type='file'
             accept='image/*'
-            onChange={(e) => setFile(e.target.files[0])}
+            onChange={(e) => setFiles(Array.from(e.target.files))} 
+            multiple 
           />
           <Button
             type='button'
-            gradientDuoTone='purpleToBlue'
+            gradientDuoTone='tealToLime'
             size='sm'
             outline
             onClick={handleUpdloadImage}
@@ -130,28 +163,45 @@ export default function CreatePost() {
                 />
               </div>
             ) : (
-              'Upload Image'
+              'Upload Images'
             )}
           </Button>
         </div>
+        
         {imageUploadError && <Alert color='failure'>{imageUploadError}</Alert>}
-        {formData.image && (
-          <img
-            src={formData.image}
-            alt='upload'
-            className='w-full h-72 object-cover'
-          />
-        )}
+        
+        <div className='flex flex-wrap gap-4'>
+            {formData.imageUrls.length > 0 &&
+                formData.imageUrls.map((url, index) => (
+                    <div key={index} className='relative w-32 h-32'>
+                        <img
+                            src={url}
+                            alt={`Post image ${index + 1}`}
+                            className='w-full h-full object-cover rounded-lg border-2 border-teal-500'
+                        />
+                        <Button
+                            type='button'
+                            color='failure'
+                            size='xs'
+                            className='absolute top-1 right-1 p-0.5 w-6 h-6 rounded-full flex items-center justify-center'
+                            onClick={() => handleRemoveImage(index)}
+                        >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </Button>
+                    </div>
+                ))}
+        </div>
+
         <ReactQuill
           theme='snow'
           placeholder='Write something...'
-          className='h-72 mb-12'
+          className='h-80 mb-12 '
           required
           onChange={(value) => {
             setFormData({ ...formData, content: value });
           }}
         />
-        <Button type='submit' gradientDuoTone='purpleToPink'>
+        <Button type='submit' gradientDuoTone='tealToLime'>
           Publish
         </Button>
         {publishError && (

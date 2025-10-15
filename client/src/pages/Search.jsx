@@ -102,9 +102,9 @@ export default function Search() {
 
   return (
     <div className='flex flex-col md:flex-row'>
-      <div className='p-7 border-b md:border-r md:min-h-screen border-gray-500'>
+      <div className='p-7 border-b md:border-r md:min-h-screen border-blue-500'>
         <form className='flex flex-col gap-8' onSubmit={handleSubmit}>
-          <div className='flex   items-center gap-2'>
+          {/* <div className='flex   items-center gap-2'>
             <label className='whitespace-nowrap font-semibold'>
               Search Term:
             </label>
@@ -115,7 +115,7 @@ export default function Search() {
               value={sidebarData.searchTerm}
               onChange={handleChange}
             />
-          </div>
+          </div> */}
           <div className='flex items-center gap-2'>
             <label className='font-semibold'>Sort:</label>
             <Select onChange={handleChange} value={sidebarData.sort} id='sort'>
@@ -130,19 +130,22 @@ export default function Search() {
               value={sidebarData.category}
               id='category'
             >
+              <option value='uncategorized'>Select...</option>
               <option value='uncategorized'>Uncategorized</option>
-              <option value='reactjs'>React.js</option>
-              <option value='nextjs'>Next.js</option>
-              <option value='javascript'>JavaScript</option>
+              <option value='budget-travel'>Budget Travel</option>
+              <option value='gourmet-recipes'>Gourmet Recipes</option>
+              <option value='street-food'>Street Food Finds</option>
+              <option value='destination-guides'>Destination Guides</option>
+              <option value='travel-hacks'>Travel Hacks</option>
             </Select>
           </div>
-          <Button type='submit' outline gradientDuoTone='purpleToPink'>
+          <Button type='submit' outline gradientDuoTone='tealToLime'>
             Apply Filters
           </Button>
         </form>
       </div>
       <div className='w-full'>
-        <h1 className='text-3xl font-semibold sm:border-b border-gray-500 p-3 mt-5 '>
+        <h1 className='text-3xl font-semibold sm:border-b border-green-500 p-3 mt-5 '>
           Posts results:
         </h1>
         <div className='p-7 flex flex-wrap gap-4'>

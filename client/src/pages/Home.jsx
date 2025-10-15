@@ -17,22 +17,22 @@ export default function Home() {
   return (
     <div>
       <div className='flex flex-col gap-6 p-10  px-3 max-w-6xl mx-auto '>
-        <h1 className='text-3xl font-bold lg:text-6xl pt-10'>Welcome to my Blog</h1>
-        <p className='text-gray-500 text-xs sm:text-sm'>
-          Welcome to my blog! Here you'll find a wide range of articles,
-          tutorials, and resources designed to help you grow as a developer.
-          Whether you're interested in web development, software engineering,
-          programming languages, or best practices in the tech industry, there's
-          something here for everyone. Dive in and explore the content to expand
-          your knowledge and skills.
+        <h1 className='text-3xl font-bold font-edu lg:text-6xl pt-10 max-w-2xl mx-auto text-lime-700 dark:text-white'>Welcome to my Blog</h1>
+        <p className='text-lime-500 text-base sm:text-2xl mt-5'>
+         Welcome to my travel and food blog! Here you'll find a wide range of articles,
+tutorials, and resources designed to help you plan your next adventure and discover
+incredible cuisine. Whether you're interested in budget travel tips, luxury destination
+guides, local street food secrets, or gourmet recipes from around the world, there's
+something here for everyone. Dive in and explore the content to expand your palate
+and fill your passport.
         </p>
         <Link
           to='/search'
-          className='text-xs sm:text-sm text-teal-500 font-bold hover:underline'
+          className='text-xs sm:text-sm text-blue-500 font-bold hover:underline'
         >
           View all posts
         </Link>
-        <div className='p-3 bg-amber-100 dark:bg-slate-700'>
+        <div className='p-3 '>
           <CallToAction />
         </div>
       </div>
@@ -48,7 +48,7 @@ export default function Home() {
             </div>
             <Link
               to={'/search'}
-              className='text-lg text-teal-500 hover:underline text-center'
+              className='text-lg text-blue-500 hover:underline text-center'
             >
               View all posts
             </Link>

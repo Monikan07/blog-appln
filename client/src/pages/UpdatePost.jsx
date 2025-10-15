@@ -86,7 +86,7 @@ export default function UpdatePost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`/api/post/updatepost/${formData._id}/${currentUser._id}`, {
+      const res = await fetch(`/api/post/updatepost/${postId}/${currentUser._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -129,17 +129,21 @@ export default function UpdatePost() {
             }
             value={formData.category}
           >
-            <option value='uncategorized'>Select a category</option>
-            <option value='javascript'>JavaScript</option>
-            <option value='reactjs'>React.js</option>
-            <option value='nextjs'>Next.js</option>
+             <option value='uncategorized'>Select...</option>
+              <option value='uncategorized'>Uncategorized</option>
+              <option value='budget-travel'>Budget Travel</option>
+              <option value='gourmet-recipes'>Gourmet Recipes</option>
+              <option value='street-food'>Street Food Finds</option>
+              <option value='destination-guides'>Destination Guides</option>
+              <option value='travel-hacks'>Travel Hacks</option>
           </Select>
         </div>
         <div className='flex gap-4 items-center justify-between border-4 border-teal-500 border-dotted p-3'>
           <FileInput
             type='file'
             accept='image/*'
-            onChange={(e) => setFile(e.target.files[0])}
+            onChange={(e) => setFile(e.target.files)}
+            multiple
           />
           <Button
             type='button'
