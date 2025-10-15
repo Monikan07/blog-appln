@@ -8,10 +8,10 @@ import commentRoutes from './routes/comment.route.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 
-dotenv.config();
+dotenv.config({ path: './api/.env' }); 
 
 mongoose
-  .connect(process.env.MONGO)
+  .connect(process.env.MONGODB_CONN)
   .then(() => {
     console.log('MongoDb is connected');
   })
@@ -26,8 +26,8 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000!');
+app.listen(5000, () => {
+  console.log('Server is running on port 5000!');
 });
 
 app.use('/api/user', userRoutes);
@@ -44,6 +44,9 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
+  if (res.headersSent) {
+      return next(err); 
+  }
   res.status(statusCode).json({
     success: false,
     statusCode,
